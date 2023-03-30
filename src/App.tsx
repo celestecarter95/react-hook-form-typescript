@@ -3,17 +3,13 @@ import React from 'react';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as Yup from 'yup';
-
-type UserSubmitForm = {
-  fullname: string;
-  username: string;
-  email: string;
-  password: string;
-  confirmPassword: string;
-  acceptTerms: boolean;
-};
+import { useMachine } from '@xstate/react';
+import FormMachine, { UserSubmitForm } from './fsm';
 
 const App: React.FC = () => {
+  const [state, send] = useMachine(FormMachine)
+  console.log('state currently,',state.value)
+
   const validationSchema = Yup.object().shape({
     fullname: Yup.string().required('Fullname is required'),
     username: Yup.string()
@@ -42,19 +38,29 @@ const App: React.FC = () => {
     resolver: yupResolver(validationSchema)
   });
 
-  const onSubmit = (data: UserSubmitForm) => {
-    console.log(JSON.stringify(data, null, 2));
-  };
+  // const onSubmit = (data: UserSubmitForm) => {
+  //   // console.log(JSON.stringify(data, null, 2));
+  //   send({type: 'REGISTER', data: data})
+  // };
+
+  const onSubmit = (event: any) => {
+    event.preventDefault()
+     send({type: 'REGISTER'})
+  }
 
   return (
     <div className="register-form">
-      <form onSubmit={handleSubmit(onSubmit)}>
+      <form onSubmit={e => onSubmit(e)}>
+      {/* <form onSubmit={handleSubmit(onSubmit)}> */}
         <div className="form-group">
           <label>Full Name</label>
           <input
             type="text"
-            {...register('fullname')}
+            // {...register('fullname')}
             className={`form-control ${errors.fullname ? 'is-invalid' : ''}`}
+            onChange={(e) => {
+              send({type: 'fullname.update', value: e.target.value})
+            }}
           />
           <div className="invalid-feedback">{errors.fullname?.message}</div>
         </div>
@@ -63,8 +69,12 @@ const App: React.FC = () => {
           <label>Username</label>
           <input
             type="text"
-            {...register('username')}
+            // {...register('username')}
             className={`form-control ${errors.username ? 'is-invalid' : ''}`}
+            onChange={(e) => {
+              send({type: 'username.update', value: e.target.value})
+            }}
+            value={state.context.username}
           />
           <div className="invalid-feedback">{errors.username?.message}</div>
         </div>
@@ -73,8 +83,12 @@ const App: React.FC = () => {
           <label>Email</label>
           <input
             type="text"
-            {...register('email')}
+            // {...register('email')}
             className={`form-control ${errors.email ? 'is-invalid' : ''}`}
+            onChange={(e) => {
+              send({type: 'email.update', value: e.target.value})
+            }}
+            value={state.context.email}
           />
           <div className="invalid-feedback">{errors.email?.message}</div>
         </div>
@@ -83,8 +97,12 @@ const App: React.FC = () => {
           <label>Password</label>
           <input
             type="password"
-            {...register('password')}
+            // {...register('password')}
             className={`form-control ${errors.password ? 'is-invalid' : ''}`}
+            onChange={(e) => {
+              send({type: 'password.update', value: e.target.value})
+            }}
+            value={state.context.password}
           />
           <div className="invalid-feedback">{errors.password?.message}</div>
         </div>
@@ -92,10 +110,13 @@ const App: React.FC = () => {
           <label>Confirm Password</label>
           <input
             type="password"
-            {...register('confirmPassword')}
+            // {...register('confirmPassword')}
             className={`form-control ${
               errors.confirmPassword ? 'is-invalid' : ''
             }`}
+            onChange={(e) => {
+              send({type: 'confirmPassword.update', value: e.target.value})
+            }}
           />
           <div className="invalid-feedback">
             {errors.confirmPassword?.message}
@@ -105,10 +126,13 @@ const App: React.FC = () => {
         <div className="form-group form-check">
           <input
             type="checkbox"
-            {...register('acceptTerms')}
+            // {...register('acceptTerms')}
             className={`form-check-input ${
               errors.acceptTerms ? 'is-invalid' : ''
             }`}
+            onChange={(e) => {
+              send({type: 'acceptTerms.update', value: e.target.value !== ""})
+            }}
           />
           <label htmlFor="acceptTerms" className="form-check-label">
             I have read and agree to the Terms
@@ -122,7 +146,10 @@ const App: React.FC = () => {
           </button>
           <button
             type="button"
-            onClick={() => reset()}
+            onClick={() => {
+              send('RESET')
+              // reset()
+            }}
             className="btn btn-warning float-right"
           >
             Reset
