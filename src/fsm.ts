@@ -1,12 +1,14 @@
 import { createMachine, assign } from "xstate";
 
 export interface UserSubmitForm {
+  usernameOnly: string;
   fullname: string;
   username: string;
   email: string;
   password: string;
   confirmPassword: string;
   acceptTerms: boolean;
+  validate: boolean | null;
   message: string;
 };
 
@@ -24,27 +26,36 @@ function FormMachine() {
               }
             },
             events: {} as 
+              | { type: "usernameOnly.update", value: string}
               | { type: "fullname.update", value: string }
               | { type: "username.update", value: string }
               | { type: "email.update", value: string }
               | { type: "password.update", value: string }
               | { type: "confirmPassword.update", value: string }
               | { type: "acceptTerms.update", value: boolean}
-              | { type: "REGISTER", data?: UserSubmitForm}
-              | { type: "RESET"}
+              | { type: "REGISTER", data: UserSubmitForm}
+              | { type: "VALIDATE", password: string, confirmPassword: string }
         },
         context: {
+          usernameOnly: "",
           fullname: "",
           username: "",
           email: "",
           password: "",
           confirmPassword: "",
           acceptTerms: false,
+          validate: null,
           message: ""
         },
         states: {
             form: {
                 on: {
+                    "usernameOnly.update": {
+                        actions: assign((_ctx, {value}) => {
+                          console.log('checked saved in xstate', value)
+                          return ({ usernameOnly: value })
+                        })
+                    },
                     "fullname.update": {
                         actions: assign((_ctx, {value}) => ({ fullname: value }))
                     },
@@ -65,10 +76,11 @@ function FormMachine() {
                     },
                     REGISTER: {
                       target: "register",
+                      actions: "saveData",
                       cond: "didUserAcceptTerms"
                     },
-                    RESET: {
-                      actions: "resetForm"
+                    VALIDATE: {
+                      actions: "validate"
                     }
                 }
             },
@@ -91,7 +103,12 @@ function FormMachine() {
         }
     }, {
       actions: {
-        resetForm: (_ctx, _evt) => ({fullname: "", username: "", email: "", password: "", confirmPassword: "", acceptTerms: false })
+        // resetForm: (_ctx, _evt) => ({fullname: "", username: "", email: "", password: "", confirmPassword: "", acceptTerms: false }),
+        saveData: (ctx, evt) => ({fullname: ctx.fullname, username: ctx.username, email: ctx.email, password: ctx.password, confirmPassword: ctx.confirmPassword, acceptTerms: ctx.acceptTerms }),
+        validate: (ctx, evt) => {
+          console.log('validating...', evt.password, evt.confirmPassword)
+          return evt.password === evt.confirmPassword
+        }
       },
       guards: {
         didUserAcceptTerms: (ctx, _evt) => {

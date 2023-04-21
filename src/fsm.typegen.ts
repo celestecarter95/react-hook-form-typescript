@@ -16,7 +16,8 @@
           services: never;
         };
         eventsCausingActions: {
-          "resetForm": "RESET";
+          "saveData": "REGISTER";
+"validate": "VALIDATE";
         };
         eventsCausingDelays: {
           
